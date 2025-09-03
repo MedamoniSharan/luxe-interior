@@ -1,73 +1,211 @@
-# 🚀 Deploy Edge Functions with CORS Fixes
+# Netlify Deployment Guide
 
-## 📋 **What We Fixed**
+This guide will walk you through deploying your Luxe Interiors application to Netlify.
 
-1. **CORS Configuration** - Updated to handle localhost origins properly
-2. **Response Headers** - Simplified CORS headers for better compatibility
-3. **Error Handling** - Improved error responses with proper CORS headers
+## 🚀 Quick Deploy
 
-## 🔧 **Manual Deployment Steps**
+### Option 1: Deploy from GitHub (Recommended)
 
-### **Step 1: Go to Supabase Dashboard**
-1. Visit [https://supabase.com/dashboard](https://supabase.com/dashboard)
-2. Select your project
+1. **Go to Netlify**
+   - Visit [netlify.com](https://netlify.com)
+   - Click "New site from Git"
 
-### **Step 2: Deploy create-razorpay-order Function**
-1. Go to **Edge Functions** (left sidebar)
-2. Find `create-razorpay-order` function
-3. Click **"Edit"**
-4. Replace the entire code with the updated version from `supabase/functions/create-razorpay-order/index.ts`
-5. Click **"Deploy"**
+2. **Connect GitHub**
+   - Choose GitHub as your Git provider
+   - Authorize Netlify to access your repositories
+   - Select `luxe-interior` repository
 
-### **Step 3: Deploy verify-payment Function**
-1. Go to **Edge Functions** (left sidebar)
-2. Find `verify-payment` function
-3. Click **"Edit"**
-4. Replace the entire code with the updated version from `supabase/functions/verify-payment/index.ts`
-5. Click **"Deploy"**
-
-### **Step 4: Verify Environment Variables**
-1. Go to **Settings** → **Edge Functions**
-2. Ensure these variables are set:
+3. **Configure Build Settings**
    ```
-   RAZORPAY_KEY_ID=rzp_test_YOUR_TEST_KEY_ID
-   RAZORPAY_KEY_SECRET=YOUR_TEST_KEY_SECRET
+   Build command: npm run build
+   Publish directory: dist
    ```
 
-## 🧪 **Test the Fix**
+4. **Set Environment Variables**
+   - Click "Show advanced" → "New variable"
+   - Add the following variables:
+     ```
+     VITE_SUPABASE_URL=your_supabase_url
+     VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+     ```
 
-1. **Restart your dev server** (if needed)
-2. **Go to Cart Page** (`/cart`)
-3. **Add/Select an address**
-4. **Click "Proceed to Payment"**
-5. **Click "Pay & Place Order"**
-6. **Check Console** - Should see successful API calls
-7. **Razorpay UI should appear** without CORS errors
+5. **Deploy**
+   - Click "Deploy site"
+   - Wait for build to complete
+   - Your site will be live!
 
-## 🔍 **Expected Console Logs**
+### Option 2: Manual Deploy
+
+1. **Install Netlify CLI**
+   ```bash
+   npm install -g netlify-cli
+   ```
+
+2. **Build your project**
+   ```bash
+   npm run build
+   ```
+
+3. **Deploy to Netlify**
+   ```bash
+   netlify deploy --prod --dir=dist
+   ```
+
+## 🔧 Configuration Files
+
+### netlify.toml
+This file configures your Netlify deployment:
+```toml
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "18"
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+```
+
+### public/_redirects
+Handles React Router SPA routing:
+```
+/*    /index.html   200
+```
+
+### public/_headers
+Sets security headers and caching:
+```
+/*
+  X-Frame-Options: DENY
+  X-XSS-Protection: 1; mode=block
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+```
+
+## 🌍 Environment Variables
+
+### Required Variables
+Set these in Netlify dashboard → Site settings → Environment variables:
 
 ```
-🔍 Starting online payment process...
-🔑 Razorpay Key ID: (from Edge Function)
-💰 Cart Total: 1.02
-📍 Selected Address: {...}
-🌐 Razorpay available: true
-📦 Edge Function order created: {...}
-🎯 Razorpay options: {...}
-🚀 Opening Razorpay modal...
-✅ Razorpay.open() called
+VITE_SUPABASE_URL=https://your-project.supabase.co
+VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
 ```
 
-## 🚫 **If CORS Still Persists**
+### How to Get Supabase Credentials
 
-1. **Check Function Logs** in Supabase Dashboard
-2. **Verify Function Status** - Should show "Active"
-3. **Check Environment Variables** - Ensure they're set correctly
-4. **Test with Simple Function** - Create a basic test function first
+1. **Go to your Supabase project**
+   - Visit [supabase.com](https://supabase.com)
+   - Select your project
 
-## 📞 **Need Help?**
+2. **Get Project URL**
+   - Go to Settings → API
+   - Copy the Project URL
 
-If you still see CORS issues after deployment:
-1. Check Supabase function logs
-2. Verify the function is actually deployed
-3. Test with a simple "Hello World" function first
+3. **Get Anon Key**
+   - In the same API settings
+   - Copy the anon/public key
+
+## 🔄 Continuous Deployment
+
+### Automatic Deploys
+- Every push to `main` branch triggers a new deployment
+- Pull requests create preview deployments
+- Branch deployments are available for testing
+
+### Custom Domain
+1. Go to Site settings → Domain management
+2. Click "Add custom domain"
+3. Follow the DNS configuration instructions
+
+## 🐛 Troubleshooting
+
+### Build Failures
+
+**Error: "Build command failed"**
+- Check if all dependencies are in `package.json`
+- Verify Node.js version (should be 18+)
+- Check build logs for specific errors
+
+**Error: "Environment variables not found"**
+- Verify environment variables are set in Netlify
+- Check variable names (must start with `VITE_`)
+- Redeploy after adding variables
+
+### Runtime Errors
+
+**Error: "Supabase connection failed"**
+- Verify `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`
+- Check Supabase project is active
+- Verify RLS policies are configured
+
+**Error: "Payment not working"**
+- Ensure Supabase edge functions are deployed
+- Check Razorpay environment variables in Supabase
+- Verify payment gateway configuration
+
+## 📊 Monitoring
+
+### Build Logs
+- View build logs in Netlify dashboard
+- Check for TypeScript compilation errors
+- Monitor build time and performance
+
+### Function Logs
+- Supabase edge function logs in Supabase dashboard
+- Monitor payment processing and errors
+- Track API response times
+
+## 🔒 Security
+
+### Environment Variables
+- Never commit `.env` files to Git
+- Use Netlify's environment variable system
+- Rotate keys regularly
+
+### Headers
+- Security headers are configured in `netlify.toml`
+- CORS policies are handled by Supabase
+- HTTPS is enforced by Netlify
+
+## 📈 Performance
+
+### Optimization
+- Assets are cached for 1 year
+- Index.html is cached for 0 seconds (always fresh)
+- Images are optimized automatically
+
+### Monitoring
+- Use Netlify Analytics for performance insights
+- Monitor Core Web Vitals
+- Track user engagement metrics
+
+## 🆘 Support
+
+### Common Issues
+1. **Build fails**: Check Node.js version and dependencies
+2. **Environment variables**: Verify names and values
+3. **Routing issues**: Check `_redirects` file
+4. **Performance**: Optimize images and bundle size
+
+### Resources
+- [Netlify Documentation](https://docs.netlify.com)
+- [Supabase Documentation](https://supabase.com/docs)
+- [Vite Build Guide](https://vitejs.dev/guide/build.html)
+
+## 🎉 Success!
+
+Once deployed, your Luxe Interiors application will be live at:
+`https://your-app-name.netlify.app`
+
+Remember to:
+- Test all functionality after deployment
+- Set up monitoring and analytics
+- Configure custom domain if needed
+- Set up backup and monitoring
